@@ -22,6 +22,210 @@
 <body>
 <a class="skip" href="#main">Skip to checklist</a>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="index.html">Broken <em>to</em> Peace<small>Foundation</small></a><div class="header-right"><span class="workspace-label">Admin workspace</span><a href="index.html">Foundation website ↗</a></div></div></header>
+<style>
+.editor-wrap{max-width:1500px;margin:2rem auto 0;padding:0 clamp(1.1rem,3vw,3rem)}
+.editor-shell{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:1.9rem 2rem}
+.editor-shell>h2{font:1.85rem/1.15 Georgia,serif;letter-spacing:-.02em;color:var(--plum);margin:0 0 .35rem}
+.editor-lede{font-size:.9375rem;color:var(--muted);margin:0 0 1.6rem;max-width:62ch}
+.editor-tabs{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.4rem;border-bottom:1px solid var(--line)}
+.editor-tab{background:transparent;border:0;border-bottom:2px solid transparent;padding:.7rem 1rem;font-size:.9375rem;color:var(--muted);cursor:pointer;margin-bottom:-1px;font-weight:550}
+.editor-tab[aria-pressed="true"]{color:var(--plum);border-color:var(--plum-mid);font-weight:650}
+.editor-body{display:none}
+.editor-body[data-active="true"]{display:block}
+.editor-field{margin-bottom:1.1rem}
+.editor-field label{display:block;font-size:.75rem;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--plum-mid);margin-bottom:.4rem}
+.editor-field textarea{min-height:100px}
+.editor-actions{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:1.3rem;align-items:center}
+.editor-status{font-size:.8125rem;color:var(--muted)}
+.editor-status[data-tone="error"]{color:var(--red);font-weight:600}
+.editor-status[data-tone="success"]{color:var(--green);font-weight:600}
+.editor-setup{padding:1.4rem 1.5rem;background:#efe5db;border-radius:8px;margin-bottom:.5rem}
+.editor-setup h3{margin:0 0 .5rem;font:1.15rem/1.3 Georgia,serif;color:var(--plum)}
+.editor-setup ol{margin:.6rem 0 1rem 1.4rem;font-size:.9375rem;line-height:1.7}
+.editor-setup input{width:100%;margin-bottom:.8rem}
+.svc-card{padding:1.1rem 1.3rem;background:var(--cream);border:1px solid var(--line);border-radius:8px;margin-bottom:1rem}
+.svc-num{font-size:.7rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--plum-mid);margin-bottom:.6rem}
+.photo-preview{width:200px;aspect-ratio:4/5;object-fit:cover;object-position:center top;margin-top:.8rem;border:1px solid var(--line);background:#eee;display:block}
+.editor-forget{font-size:.75rem;color:var(--muted);background:transparent;border:0;padding:.4rem 0;text-decoration:underline;cursor:pointer}
+.editor-warning{margin-top:1rem;padding:.85rem 1rem;background:var(--amber-bg);color:var(--amber);border-radius:6px;font-size:.8125rem}
+</style>
+<section class="editor-wrap" id="content-editor" aria-labelledby="content-editor-title">
+<div class="editor-shell">
+<h2 id="content-editor-title">Site content editor</h2>
+<p class="editor-lede">Update your bio, services, and photo. Changes go live within about a minute of saving.</p>
+<div id="editor-setup" class="editor-setup" hidden>
+<h3>One-time setup</h3>
+<p style="font-size:.9375rem;line-height:1.6;margin:0 0 .8rem">To let this editor publish your changes, we need a GitHub personal access token that can write to your website’s repository. This is stored only in this browser.</p>
+<ol>
+<li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → fine-grained personal access tokens</a>.</li>
+<li>Token name: <strong>Broken to Peace admin</strong>. Expiration: 1 year.</li>
+<li>Repository access: <strong>Only select repositories</strong> → pick <strong>faithjtherapy/brokentopeacefoundation</strong>.</li>
+<li>Repository permissions → <strong>Contents: Read and write</strong>.</li>
+<li>Generate the token, copy it, paste it below.</li>
+</ol>
+<input type="password" id="editor-token" placeholder="github_pat_... or ghp_..." autocomplete="off">
+<button type="button" class="btn btn-primary" id="editor-token-save">Save token and start editing</button>
+</div>
+<div id="editor-main" hidden>
+<div class="editor-tabs" role="tablist">
+<button type="button" class="editor-tab" data-tab="bio" aria-pressed="true">Bio</button>
+<button type="button" class="editor-tab" data-tab="services" aria-pressed="false">Services</button>
+<button type="button" class="editor-tab" data-tab="photo" aria-pressed="false">Photo</button>
+</div>
+<div class="editor-body" data-tab="bio" data-active="true">
+<div class="editor-field"><label for="bio-1">Paragraph 1</label><textarea id="bio-1"></textarea></div>
+<div class="editor-field"><label for="bio-2">Paragraph 2</label><textarea id="bio-2"></textarea></div>
+<div class="editor-field"><label for="bio-3">Paragraph 3</label><textarea id="bio-3"></textarea></div>
+<div class="editor-field"><label for="bio-4">Paragraph 4</label><textarea id="bio-4"></textarea></div>
+<div class="editor-field"><label for="bio-5">Paragraph 5</label><textarea id="bio-5"></textarea></div>
+<div class="editor-field"><label for="bio-6">Paragraph 6</label><textarea id="bio-6"></textarea></div>
+<div class="editor-actions"><button type="button" class="btn btn-primary" id="save-bio">Save bio</button><span class="editor-status" id="bio-status"></span></div>
+</div>
+<div class="editor-body" data-tab="services">
+<div class="svc-card"><div class="svc-num">Service 1</div>
+<div class="editor-field"><label for="svc-1-title">Title</label><input type="text" id="svc-1-title"></div>
+<div class="editor-field"><label for="svc-1-body">Description</label><textarea id="svc-1-body"></textarea></div></div>
+<div class="svc-card"><div class="svc-num">Service 2</div>
+<div class="editor-field"><label for="svc-2-title">Title</label><input type="text" id="svc-2-title"></div>
+<div class="editor-field"><label for="svc-2-body">Description</label><textarea id="svc-2-body"></textarea></div></div>
+<div class="svc-card"><div class="svc-num">Service 3</div>
+<div class="editor-field"><label for="svc-3-title">Title</label><input type="text" id="svc-3-title"></div>
+<div class="editor-field"><label for="svc-3-body">Description</label><textarea id="svc-3-body"></textarea></div></div>
+<div class="editor-actions"><button type="button" class="btn btn-primary" id="save-services">Save services</button><span class="editor-status" id="services-status"></span></div>
+</div>
+<div class="editor-body" data-tab="photo">
+<p style="font-size:.9375rem;color:var(--muted);margin:0 0 .3rem">Current photo on the site:</p>
+<img class="photo-preview" id="current-photo" src="IMG_0496.png" alt="Current founder photo">
+<div class="editor-field" style="margin-top:1.4rem"><label for="photo-file">Choose a new photo (JPG or PNG, portrait works best)</label><input type="file" id="photo-file" accept="image/jpeg,image/png"></div>
+<p style="font-size:.8125rem;color:var(--muted);margin:.6rem 0 0">Preview:</p>
+<img class="photo-preview" id="new-photo-preview" hidden alt="New photo preview">
+<div class="editor-actions"><button type="button" class="btn btn-primary" id="save-photo" disabled>Upload new photo</button><span class="editor-status" id="photo-status"></span></div>
+</div>
+<button type="button" class="editor-forget" id="editor-forget" style="margin-top:1.2rem">Forget my saved token on this browser</button>
+</div>
+</div>
+</section>
+<script>
+(function(){
+var OWNER='faithjtherapy',REPO='brokentopeacefoundation',BRANCH='main',KEY='btp_gh_token';
+function $(id){return document.getElementById(id)}
+function status(id,msg,tone){var el=$(id);if(!el)return;el.textContent=msg||'';el.dataset.tone=tone||''}
+function b64Encode(str){return btoa(unescape(encodeURIComponent(str)))}
+function b64Decode(b){return decodeURIComponent(escape(atob(b.replace(/\s/g,''))))}
+function bytesToB64(bytes){var s='';for(var i=0;i<bytes.length;i++)s+=String.fromCharCode(bytes[i]);return btoa(s)}
+function gh(path,opts){
+ var token=localStorage.getItem(KEY);
+ if(!token)return Promise.reject(new Error('no token'));
+ opts=opts||{};
+ return fetch('https://api.github.com'+path,{
+  method:opts.method||'GET',
+  headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+  body:opts.body
+ }).then(function(r){
+  if(!r.ok)return r.text().then(function(t){throw new Error(r.status+': '+t.slice(0,200))});
+  return r.json();
+ });
+}
+function getFile(path){return gh('/repos/'+OWNER+'/'+REPO+'/contents/'+path+'?ref='+BRANCH+'&t='+Date.now())}
+function putFile(path,contentB64,sha,message){
+ return gh('/repos/'+OWNER+'/'+REPO+'/contents/'+path,{
+  method:'PUT',
+  body:JSON.stringify({message:message,content:contentB64,sha:sha,branch:BRANCH})
+ });
+}
+function parseIndex(html){return new DOMParser().parseFromString(html,'text/html')}
+function serializeIndex(doc){return '<!doctype html>\n'+doc.documentElement.outerHTML}
+function loadContent(){
+ status('bio-status','Loading current site content...');
+ return getFile('index.html').then(function(f){
+  var html=b64Decode(f.content);
+  var doc=parseIndex(html);
+  var ps=doc.querySelectorAll('.founder-copy > p');
+  for(var i=0;i<6;i++){var ta=$('bio-'+(i+1));if(ta&&ps[i])ta.value=ps[i].textContent.trim()}
+  var cards=doc.querySelectorAll('#services .value');
+  for(var j=0;j<3;j++){
+   var c=cards[j];if(!c)continue;
+   var t=c.querySelector('h3'),b=c.querySelector('p');
+   if($('svc-'+(j+1)+'-title'))$('svc-'+(j+1)+'-title').value=t?t.textContent.trim():'';
+   if($('svc-'+(j+1)+'-body'))$('svc-'+(j+1)+'-body').value=b?b.textContent.trim():'';
+  }
+  status('bio-status','');
+ }).catch(function(e){status('bio-status','Load failed: '+e.message,'error')});
+}
+function saveBio(){
+ status('bio-status','Saving...');
+ return getFile('index.html').then(function(f){
+  var doc=parseIndex(b64Decode(f.content));
+  var ps=doc.querySelectorAll('.founder-copy > p');
+  for(var i=0;i<6;i++){var v=$('bio-'+(i+1)).value.trim();if(ps[i]&&v)ps[i].textContent=v}
+  return putFile('index.html',b64Encode(serializeIndex(doc)),f.sha,'Admin editor: update founder bio');
+ }).then(function(){status('bio-status','Saved. Live in ~1 minute.','success')})
+   .catch(function(e){status('bio-status','Save failed: '+e.message,'error')});
+}
+function saveServices(){
+ status('services-status','Saving...');
+ return getFile('index.html').then(function(f){
+  var doc=parseIndex(b64Decode(f.content));
+  var cards=doc.querySelectorAll('#services .value');
+  for(var i=0;i<3;i++){
+   var c=cards[i];if(!c)continue;
+   var t=$('svc-'+(i+1)+'-title').value.trim(),b=$('svc-'+(i+1)+'-body').value.trim();
+   var h3=c.querySelector('h3'),p=c.querySelector('p');
+   if(h3&&t)h3.textContent=t;
+   if(p&&b)p.textContent=b;
+  }
+  return putFile('index.html',b64Encode(serializeIndex(doc)),f.sha,'Admin editor: update services');
+ }).then(function(){status('services-status','Saved. Live in ~1 minute.','success')})
+   .catch(function(e){status('services-status','Save failed: '+e.message,'error')});
+}
+var pendingPhotoBytes=null;
+function onPhotoChange(){
+ var f=$('photo-file').files[0];
+ if(!f){$('save-photo').disabled=true;return}
+ f.arrayBuffer().then(function(buf){
+  pendingPhotoBytes=new Uint8Array(buf);
+  var url=URL.createObjectURL(f);
+  $('new-photo-preview').src=url;$('new-photo-preview').hidden=false;
+  $('save-photo').disabled=false;
+ });
+}
+function savePhoto(){
+ if(!pendingPhotoBytes)return;
+ status('photo-status','Uploading...');
+ return getFile('IMG_0496.png').then(function(f){
+  return putFile('IMG_0496.png',bytesToB64(pendingPhotoBytes),f.sha,'Admin editor: update founder photo');
+ }).then(function(){status('photo-status','Uploaded. Live in ~1 minute.','success');$('current-photo').src='IMG_0496.png?t='+Date.now()})
+   .catch(function(e){status('photo-status','Upload failed: '+e.message,'error')});
+}
+// Wire up
+document.querySelectorAll('.editor-tab').forEach(function(btn){
+ btn.addEventListener('click',function(){
+  var t=btn.dataset.tab;
+  document.querySelectorAll('.editor-tab').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.tab===t)});
+  document.querySelectorAll('.editor-body').forEach(function(p){p.dataset.active=(p.dataset.tab===t)});
+ });
+});
+$('editor-token-save').addEventListener('click',function(){
+ var v=$('editor-token').value.trim();
+ if(!v){alert('Paste your GitHub token first.');return}
+ localStorage.setItem(KEY,v);
+ $('editor-setup').hidden=true;$('editor-main').hidden=false;
+ loadContent();
+});
+$('editor-forget').addEventListener('click',function(){
+ localStorage.removeItem(KEY);
+ $('editor-main').hidden=true;$('editor-setup').hidden=false;
+ $('editor-token').value='';
+});
+$('save-bio').addEventListener('click',saveBio);
+$('save-services').addEventListener('click',saveServices);
+$('save-photo').addEventListener('click',savePhoto);
+$('photo-file').addEventListener('change',onPhotoChange);
+// Init
+if(localStorage.getItem(KEY)){$('editor-main').hidden=false;loadContent()}else{$('editor-setup').hidden=false}
+})();
+</script>
+
 <div class="layout">
 <aside class="sidebar"><p class="nav-label">Your workstreams</p><nav aria-label="Checklist workstreams"><button type="button" class="category" data-category="all" aria-pressed="true"><span class="category-letter">↗</span><span>All tasks</span><span class="category-count" data-count="all">0/67</span></button><button type="button" class="category" data-category="priority" aria-pressed="false"><span class="category-letter">✦</span><span>Start here</span><span class="category-count">20</span></button><div class="nav-divider"></div><button class="category" type="button" data-category="A" aria-pressed="false"><span class="category-letter">A</span><span>Corporate records</span><span class="category-count" data-count="A">0/9</span></button><button class="category" type="button" data-category="B" aria-pressed="false"><span class="category-letter">B</span><span>Federal recognition</span><span class="category-count" data-count="B">0/10</span></button><button class="category" type="button" data-category="C" aria-pressed="false"><span class="category-letter">C</span><span>Banking</span><span class="category-count" data-count="C">0/5</span></button><button class="category" type="button" data-category="D" aria-pressed="false"><span class="category-letter">D</span><span>Group home licensing</span><span class="category-count" data-count="D">0/14</span></button><button class="category" type="button" data-category="E" aria-pressed="false"><span class="category-letter">E</span><span>Transitional living</span><span class="category-count" data-count="E">0/7</span></button><button class="category" type="button" data-category="F" aria-pressed="false"><span class="category-letter">F</span><span>Funding</span><span class="category-count" data-count="F">0/7</span></button><button class="category" type="button" data-category="G" aria-pressed="false"><span class="category-letter">G</span><span>Website &amp; outreach</span><span class="category-count" data-count="G">0/9</span></button><button class="category" type="button" data-category="H" aria-pressed="false"><span class="category-letter">H</span><span>Ongoing operations</span><span class="category-count" data-count="H">0/6</span></button><div class="nav-divider"></div><button type="button" class="category" data-category="questions" aria-pressed="false"><span class="category-letter">?</span><span>Founder decisions</span><span class="category-count" id="decision-count">1/10</span></button></nav><p class="sidebar-note"><strong>One step at a time.</strong><br>Start with corporate records, registration, and the licensing conversation.</p></aside>
 <main class="main" id="main" tabindex="-1">
