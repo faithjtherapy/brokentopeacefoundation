@@ -53,19 +53,6 @@
 <div class="editor-shell">
 <h2 id="content-editor-title">Site content editor</h2>
 <p class="editor-lede">Update your bio, services, and photo. Changes go live within about a minute of saving.</p>
-<div id="editor-setup" class="editor-setup" hidden>
-<h3>One-time setup</h3>
-<p style="font-size:.9375rem;line-height:1.6;margin:0 0 .8rem">To let this editor publish your changes, we need a GitHub personal access token that can write to your website’s repository. This is stored only in this browser.</p>
-<ol>
-<li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → fine-grained personal access tokens</a>.</li>
-<li>Token name: <strong>Broken to Peace admin</strong>. Expiration: 1 year.</li>
-<li>Repository access: <strong>Only select repositories</strong> → pick <strong>faithjtherapy/brokentopeacefoundation</strong>.</li>
-<li>Repository permissions → <strong>Contents: Read and write</strong>.</li>
-<li>Generate the token, copy it, paste it below.</li>
-</ol>
-<input type="password" id="editor-token" placeholder="github_pat_... or ghp_..." autocomplete="off">
-<button type="button" class="btn btn-primary" id="editor-token-save">Save token and start editing</button>
-</div>
 <div id="editor-main" hidden>
 <div class="editor-tabs" role="tablist">
 <button type="button" class="editor-tab" data-tab="bio" aria-pressed="true">Bio</button>
@@ -101,45 +88,24 @@
 <img class="photo-preview" id="new-photo-preview" hidden alt="New photo preview">
 <div class="editor-actions"><button type="button" class="btn btn-primary" id="save-photo" disabled>Upload new photo</button><span class="editor-status" id="photo-status"></span></div>
 </div>
-<button type="button" class="editor-forget" id="editor-forget" style="margin-top:1.2rem">Forget my saved token on this browser</button>
 </div>
 </div>
 </section>
 <script>
 (function(){
-var OWNER='faithjtherapy',REPO='brokentopeacefoundation',BRANCH='main',KEY='btp_gh_token';
 function $(id){return document.getElementById(id)}
 function status(id,msg,tone){var el=$(id);if(!el)return;el.textContent=msg||'';el.dataset.tone=tone||''}
-function b64Encode(str){return btoa(unescape(encodeURIComponent(str)))}
-function b64Decode(b){return decodeURIComponent(escape(atob(b.replace(/\s/g,''))))}
 function bytesToB64(bytes){var s='';for(var i=0;i<bytes.length;i++)s+=String.fromCharCode(bytes[i]);return btoa(s)}
-function gh(path,opts){
- var token=localStorage.getItem(KEY);
- if(!token)return Promise.reject(new Error('no token'));
- opts=opts||{};
- return fetch('https://api.github.com'+path,{
-  method:opts.method||'GET',
-  headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
-  body:opts.body
- }).then(function(r){
-  if(!r.ok)return r.text().then(function(t){throw new Error(r.status+': '+t.slice(0,200))});
-  return r.json();
- });
+function api(path,body){
+ return fetch(path,{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify(body)})
+  .then(function(r){return r.json().then(function(j){return{ok:r.ok,body:j}})})
+  .then(function(res){if(!res.ok)throw new Error(res.body.error||('HTTP '+res.status));return res.body})
 }
-function getFile(path){return gh('/repos/'+OWNER+'/'+REPO+'/contents/'+path+'?ref='+BRANCH+'&t='+Date.now())}
-function putFile(path,contentB64,sha,message){
- return gh('/repos/'+OWNER+'/'+REPO+'/contents/'+path,{
-  method:'PUT',
-  body:JSON.stringify({message:message,content:contentB64,sha:sha,branch:BRANCH})
- });
-}
-function parseIndex(html){return new DOMParser().parseFromString(html,'text/html')}
-function serializeIndex(doc){return '<!doctype html>\n'+doc.documentElement.outerHTML}
 function loadContent(){
  status('bio-status','Loading current site content...');
- return getFile('index.html').then(function(f){
-  var html=b64Decode(f.content);
-  var doc=parseIndex(html);
+ // fetch live index.html to prefill fields (public, no auth needed)
+ return fetch('/index.html?t='+Date.now(),{credentials:'omit'}).then(function(r){return r.text()}).then(function(html){
+  var doc=new DOMParser().parseFromString(html,'text/html');
   var ps=doc.querySelectorAll('.founder-copy > p');
   for(var i=0;i<6;i++){var ta=$('bio-'+(i+1));if(ta&&ps[i])ta.value=ps[i].textContent.trim()}
   var cards=doc.querySelectorAll('#services .value');
@@ -154,29 +120,17 @@ function loadContent(){
 }
 function saveBio(){
  status('bio-status','Saving...');
- return getFile('index.html').then(function(f){
-  var doc=parseIndex(b64Decode(f.content));
-  var ps=doc.querySelectorAll('.founder-copy > p');
-  for(var i=0;i<6;i++){var v=$('bio-'+(i+1)).value.trim();if(ps[i]&&v)ps[i].textContent=v}
-  return putFile('index.html',b64Encode(serializeIndex(doc)),f.sha,'Admin editor: update founder bio');
- }).then(function(){status('bio-status','Saved. Live in ~1 minute.','success')})
-   .catch(function(e){status('bio-status','Save failed: '+e.message,'error')});
+ var paragraphs=[];for(var i=1;i<=6;i++)paragraphs.push($('bio-'+i).value.trim());
+ return api('/api/save-bio',{paragraphs:paragraphs})
+  .then(function(){status('bio-status','Saved. Live in ~1 minute.','success')})
+  .catch(function(e){status('bio-status','Save failed: '+e.message,'error')});
 }
 function saveServices(){
  status('services-status','Saving...');
- return getFile('index.html').then(function(f){
-  var doc=parseIndex(b64Decode(f.content));
-  var cards=doc.querySelectorAll('#services .value');
-  for(var i=0;i<3;i++){
-   var c=cards[i];if(!c)continue;
-   var t=$('svc-'+(i+1)+'-title').value.trim(),b=$('svc-'+(i+1)+'-body').value.trim();
-   var h3=c.querySelector('h3'),p=c.querySelector('p');
-   if(h3&&t)h3.textContent=t;
-   if(p&&b)p.textContent=b;
-  }
-  return putFile('index.html',b64Encode(serializeIndex(doc)),f.sha,'Admin editor: update services');
- }).then(function(){status('services-status','Saved. Live in ~1 minute.','success')})
-   .catch(function(e){status('services-status','Save failed: '+e.message,'error')});
+ var cards=[];for(var i=1;i<=3;i++)cards.push({title:$('svc-'+i+'-title').value.trim(),body:$('svc-'+i+'-body').value.trim()});
+ return api('/api/save-services',{cards:cards})
+  .then(function(){status('services-status','Saved. Live in ~1 minute.','success')})
+  .catch(function(e){status('services-status','Save failed: '+e.message,'error')});
 }
 var pendingPhotoBytes=null;
 function onPhotoChange(){
@@ -192,12 +146,10 @@ function onPhotoChange(){
 function savePhoto(){
  if(!pendingPhotoBytes)return;
  status('photo-status','Uploading...');
- return getFile('IMG_0496.png').then(function(f){
-  return putFile('IMG_0496.png',bytesToB64(pendingPhotoBytes),f.sha,'Admin editor: update founder photo');
- }).then(function(){status('photo-status','Uploaded. Live in ~1 minute.','success');$('current-photo').src='IMG_0496.png?t='+Date.now()})
-   .catch(function(e){status('photo-status','Upload failed: '+e.message,'error')});
+ return api('/api/save-photo',{contentB64:bytesToB64(pendingPhotoBytes)})
+  .then(function(){status('photo-status','Uploaded. Live in ~1 minute.','success');$('current-photo').src='IMG_0496.png?t='+Date.now()})
+  .catch(function(e){status('photo-status','Upload failed: '+e.message,'error')});
 }
-// Wire up
 document.querySelectorAll('.editor-tab').forEach(function(btn){
  btn.addEventListener('click',function(){
   var t=btn.dataset.tab;
@@ -205,24 +157,12 @@ document.querySelectorAll('.editor-tab').forEach(function(btn){
   document.querySelectorAll('.editor-body').forEach(function(p){p.dataset.active=(p.dataset.tab===t)});
  });
 });
-$('editor-token-save').addEventListener('click',function(){
- var v=$('editor-token').value.trim();
- if(!v){alert('Paste your GitHub token first.');return}
- localStorage.setItem(KEY,v);
- $('editor-setup').hidden=true;$('editor-main').hidden=false;
- loadContent();
-});
-$('editor-forget').addEventListener('click',function(){
- localStorage.removeItem(KEY);
- $('editor-main').hidden=true;$('editor-setup').hidden=false;
- $('editor-token').value='';
-});
 $('save-bio').addEventListener('click',saveBio);
 $('save-services').addEventListener('click',saveServices);
 $('save-photo').addEventListener('click',savePhoto);
 $('photo-file').addEventListener('change',onPhotoChange);
-// Init
-if(localStorage.getItem(KEY)){$('editor-main').hidden=false;loadContent()}else{$('editor-setup').hidden=false}
+$('editor-main').hidden=false;
+loadContent();
 })();
 </script>
 
